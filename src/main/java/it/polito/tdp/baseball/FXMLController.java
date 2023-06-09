@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import it.polito.tdp.baseball.model.Grado;
 import it.polito.tdp.baseball.model.Model;
 import it.polito.tdp.baseball.model.People;
 import javafx.event.ActionEvent;
@@ -49,26 +48,77 @@ public class FXMLController {
     
     @FXML
     void doCalcolaConnesse(ActionEvent event) {
-    	
+    	int nComponentiConnesse = model.getNumberOfConnectedComponents();
+    	this.txtResult.setText("Numero componenti connesse = "+nComponentiConnesse);
     }
 
     
     
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	String inputAnno = this.txtYear.getText();
+    	String inputSalary = this.txtSalary.getText();
+    	Integer inputAnnoNUM;
+    	Integer inputSalaryNUM;
+    	try {
+    		inputAnnoNUM = Integer.parseInt(inputAnno);
+    		
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserire un valore numerico nel campo Year");
+    		return;
+    	}
+    	try {
+    		inputSalaryNUM = Integer.parseInt(inputSalary);//ricorda di verificare che l'anno inserito sia presente nel DB
+    		
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserire un valore numerico nel campo Salary");
+    		return;
+    	}
+    	String s = model.creaGrafo(inputAnnoNUM, inputSalaryNUM);
+    	this.txtResult.setText(s);
     	
+    	
+    	this.btnConnesse.setDisable(false);
+    	this.btnGradoMassimo.setDisable(false);
+    	this.btnDreamTeam.setDisable(false);
     }
 
     
     @FXML
     void doDreamTeam(ActionEvent event) {
-
+    	String input = this.txtYear.getText();
+    	Integer inputAnnoNUM;
+    	String s = "";
+    	try {
+    		inputAnnoNUM = Integer.parseInt(input);
+    		
+    		List<People> dreamTeam = model.calcolaDreamTeam(inputAnnoNUM);
+    		for(People p : dreamTeam) {
+    			s += p.getNameFirst()+" "+p.getNameLast()+"\n";
+    		}
+    		
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserire un valore numerico nel campo Year");
+    		return;
+    	}
     }
 
     
     @FXML
     void doGradoMassimo(ActionEvent event) {
-
+    	String inputAnno = this.txtYear.getText();
+    	Integer inputAnnoNUM;
+    	try {
+    		inputAnnoNUM = Integer.parseInt(inputAnno);
+        	
+    		People p = model.getVerticeGradoMassimo(inputAnnoNUM);
+    		this.txtResult.setText("Il vertice di grado massimo è : "+p.getNameFirst()+" "+p.getNameLast()+" avente peso = "+model.calcolaGrado(p, inputAnnoNUM));
+    		
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserire un valore numerico nel campo Year");
+    		return;
+    	}
+    	
     }
 
     

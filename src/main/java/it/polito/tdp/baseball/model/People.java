@@ -21,6 +21,7 @@ public class People {
     private LocalDateTime debutDate;
     private LocalDateTime finalgameDate;
     private LocalDateTime deathDate;
+    private double salario;
 
     
 
@@ -44,6 +45,17 @@ public class People {
 		this.finalgameDate = finalgameDate;
 		this.deathDate = deathDate;
 	}
+
+    
+	public double getSalario() {
+		return salario;
+	}
+
+
+	public void setSalario(double salario) {
+		this.salario = salario;
+	}
+
 
 	public String getPlayerID(){
         return playerID;
