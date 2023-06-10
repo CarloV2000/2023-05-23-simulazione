@@ -49,15 +49,6 @@ public class Model {
 			grafo.addEdge(x.getP1(), x.getP2());
 		}
 		
-		/*
-		 * Creato il grafo, possiamo registrarci in una mapp il salario dei giocatori che ne fanno parte
-		 * perché ci servirà per fare il punto 2 della simulazione
-		 * Registriamoci di questi giocatori il loro salario in quell'anno. In una seconda mappa
-		 * ci registriamo in quali squadre ha giocato ogni giocatore. Questo non è necessario,
-		 * lo facciamo solo per visualizzare la squadra di appartenenza dei giocatori del dream team,
-		 * per debugging.
-		 */
-		
 		return ("Grafo creato con "+grafo.vertexSet().size()+" vertici e "+grafo.edgeSet().size()+" archi");
 	}
 	
