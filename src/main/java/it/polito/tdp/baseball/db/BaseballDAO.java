@@ -303,5 +303,34 @@ public class BaseballDAO {
 
 
 
+	public List<Integer> readTeamDelPlayerNellAnno(int anno, People p, Map<Integer, Team> teamsIDMap) {
+		String sql = "SELECT a.playerID, a.teamID "
+				+ "FROM appearances a "
+				+ "WHERE a.year=? AND a.playerID = ? ";
+		List<Integer> result = new ArrayList<Integer>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, anno);
+			st.setObject(2, p.getPlayerID());
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Integer squadra = teamsIDMap.get(rs.getInt("teamID")).getID();
+				result.add(squadra);
+			}
+
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+
+
+
 	
 }

@@ -49,7 +49,7 @@ public class FXMLController {
     @FXML
     void doCalcolaConnesse(ActionEvent event) {
     	int nComponentiConnesse = model.getNumberOfConnectedComponents();
-    	this.txtResult.setText("Numero componenti connesse = "+nComponentiConnesse);
+    	this.txtResult.appendText("\nNumero componenti connesse = "+nComponentiConnesse);
     }
 
     
@@ -92,7 +92,8 @@ public class FXMLController {
     	try {
     		inputAnnoNUM = Integer.parseInt(input);
     		
-    		List<People> dreamTeam = model.calcolaDreamTeam(inputAnnoNUM);
+    		model.calcolaDreamTeam();
+    		List<People> dreamTeam = model.getDreamTeam();
     		for(People p : dreamTeam) {
     			s += p.getNameFirst()+" "+p.getNameLast()+"\n";
     		}
@@ -112,7 +113,7 @@ public class FXMLController {
     		inputAnnoNUM = Integer.parseInt(inputAnno);
         	
     		People p = model.getVerticeGradoMassimo(inputAnnoNUM);
-    		this.txtResult.setText("Il vertice di grado massimo è : "+p.getNameFirst()+" "+p.getNameLast()+" avente peso = "+model.calcolaGrado(p, inputAnnoNUM));
+    		this.txtResult.appendText("\nIl vertice di grado massimo è : "+p.getNameFirst()+" "+p.getNameLast()+" avente peso = "+model.calcolaGrado(p, inputAnnoNUM));
     		
     	}catch(NumberFormatException e) {
     		this.txtResult.setText("Inserire un valore numerico nel campo Year");

@@ -21,13 +21,15 @@ public class Model {
 	private BaseballDAO dao;
 	private Map<String, People>idMap;
 	
+	private Map<People, Double> salariesIDMap;
+	private Map<People, List<Team>> playerTeamsMap;
 	private List<People>dreamTeam;
-	private double salarioMaggiore;
+	private Double salarioMaggiore;
 	
 	public Model() {
 		this.allPeople = new ArrayList<>();
 		this.dao = new BaseballDAO();
-		this.idMap = new HashMap<>();
+		this.idMap = new HashMap<>();		
 	}
 	
 	public String creaGrafo(int anno, int salaryMINMLN) {
@@ -46,6 +48,16 @@ public class Model {
 		for(CoppiaA x: allCoppie) {
 			grafo.addEdge(x.getP1(), x.getP2());
 		}
+		
+		/*
+		 * Creato il grafo, possiamo registrarci in una mapp il salario dei giocatori che ne fanno parte
+		 * perché ci servirà per fare il punto 2 della simulazione
+		 * Registriamoci di questi giocatori il loro salario in quell'anno. In una seconda mappa
+		 * ci registriamo in quali squadre ha giocato ogni giocatore. Questo non è necessario,
+		 * lo facciamo solo per visualizzare la squadra di appartenenza dei giocatori del dream team,
+		 * per debugging.
+		 */
+		
 		return ("Grafo creato con "+grafo.vertexSet().size()+" vertici e "+grafo.edgeSet().size()+" archi");
 	}
 	
@@ -90,40 +102,158 @@ public class Model {
 	 *  	in corso (anche per parte di esso).
 	 *   La squadra selezionata dovrà selezionare, fra le varie soluzioni possibili, quella con salario cumulativo più alto.
 	 */
-	public List<People>calcolaDreamTeam(int anno) {
-		List<People>parziale = new ArrayList<>();
-		cerca(parziale, 0, anno );
-		return this.dreamTeam;
-	}
-	public void cerca(List<People>parziale, int livello, int anno) {
+	/**
+	 * Metodo che calcola il Dream Team
+	 */
+	public void  calcolaDreamTeam() {
+		this.salarioMaggiore = 0.0;
+		this.dreamTeam = new ArrayList<People>();
+		List<People> rimanenti = new ArrayList<People>(this.grafo.vertexSet());
 		
-		if(getSalarioTeam(parziale)> this.salarioMaggiore) {//se il salario tot è maggiore: parziale diventa migliore
-			this.salarioMaggiore = getSalarioTeam(parziale);
-			this.dreamTeam = new ArrayList<>(parziale);
+		/*
+		 * Questo check non era richiesto nel testo, ma servo ad escludere dal calcolo
+		 * del dream team i giocatori che non hanno mai giocato nell'anno (ad esempio perché infortunati).
+		 * Per come è stato costruito il grafo questi sono dei vertici isolati.
+		 */
+		
+		List<People> playersInattivi = new ArrayList<People>(this.grafo.vertexSet());
+		for (People p : rimanenti) {
+			if (!this.playerTeamsMap.get(p).isEmpty()){
+				playersInattivi.remove(p);
+			}
+		}
+		rimanenti.removeAll(playersInattivi);
+		
+		ricorsione(new ArrayList<People>(), rimanenti);
+	}
+	
+	
+	
+	/**
+	 * La ricorsione vera e propria
+	 * @param parziale
+	 * @param rimanenti
+	 */
+	private void ricorsione(List<People> parziale, List<People> rimanenti){
+		/*
+		 * L'idea della ricorsione è di prendere un giocatore, metterlo nella lista parziale,
+		 * e rimuovere tutti i suoi compagni di squadra (trovati come i suoi vicini) dalla lista di giocatori rimanenti.
+		 * Dopodichè, ripetiamo la ricorsione, usando parziale ed il nuovo insieme ridotto di giocatori rimanenti,
+		 * fino a che non li finiamo.
+		 */
+		// Condizione Terminale
+		if (rimanenti.isEmpty()) {
+			//calcolo costo
+			double salario = getSalarioTeam(parziale);
+			if (salario>this.salarioMaggiore) {
+				this.salarioMaggiore = salario;
+				this.dreamTeam = new ArrayList<People>(parziale);
+			}
+			return;
 		}
 		
-		List<String>codiciSquadreDreamTeam = new ArrayList<>();
-		for(People x : grafo.vertexSet()) {
-			List<String> squadre = dao.readTeamDelPlayerNellAnno(x, anno);
-			
-				if(!codiciSquadreDreamTeam.contains(squadre.get(0)) && !codiciSquadreDreamTeam.contains(squadre.get(1))) {//qui posso avere soluzioni
-					codiciSquadreDreamTeam.add(squadre.get(0));
-					if(squadre.get(1)!=null) {
-						codiciSquadreDreamTeam.add(squadre.get(1));
-					}
-					parziale.add(x);
-					cerca(parziale, livello+1, anno);
-					parziale.remove(parziale.size()-1);
-				}
-			
+		/*
+		 * VERSIONE NON OTTIMIZZATA DELLA RICORSIONE
+		 */
+		/*
+		 * Questa versione riguarda le stesse combinazioni di giocatori più volte, e richiede mooolto tempo.
+		 * Riesce a terminare in tempi acettabili solo su grafi molto piccoli, con meno di 10 vertici. La versione 
+		 * ottimizzata di sotto riesce a gestire velocemente anche grafi con 40-50 vertici.
+		 */
+//		for (People p : rimanenti) {
+//			List<People> currentRimanenti = new ArrayList<>(rimanenti);
+//				parziale.add(p);
+//				currentRimanenti.removeAll(Graphs.neighborListOf(this.grafo, p));
+//				currentRimanenti.remove(p);
+//				ricorsione(parziale, currentRimanenti);
+//				parziale.remove(parziale.size()-1);
+//		}
+		
+		
+		/*
+		 * VERSIONE OTTIMIZZATA DELLA RICORSIONE
+		 */
+		/*
+		 * Rispetto alla versione non ottimizzata, qui l'idea è di ciclare su una squadra alla volta
+		 * piuttosto che su tutti i vertici del grafo, rimuovendo così molti casi.
+		 * Per selezionare una squadra potremmo prendere un vertice, e poi prendere tutti i suoi vicini.
+		 * Però alcuni di questi vertici (giocatori) potrebbero aver giocato per 2 squadre in un anno,
+		 * perciò se selezionassimo i suoi vicini prenderemmo due squadre invece di una.
+		 * Per evitare questo problema, andiamo prima a prendere un vertice qualsiasi, con tutti i suoi vicini.
+		 * Poi, tra questi prendiamo un vertice di grado minimo, e andiamo a calcolare i suoi vicini.
+		 * L'alternativa sarebbe di fare, nel metodo calcolaDreamTeam(), un sort dei vertici in 'rimanente' in ordine crescente del loro grado
+		 * e poi selezionare sempre il primo.
+		 */
+		List<People> squadra =  Graphs.neighborListOf(this.grafo, rimanenti.get(0));
+		squadra.add( rimanenti.get(0));
+		People startP = minDegreeVertex(squadra);
+		List<People> squadraMin =  Graphs.neighborListOf(this.grafo, rimanenti.get(0));
+		squadraMin.add( rimanenti.get(0));
+		
+		for (People p : squadraMin) {
+			List<People> currentRimanenti = new ArrayList<>(rimanenti);
+			parziale.add(p);
+			currentRimanenti.removeAll(squadraMin);
+			ricorsione(parziale, currentRimanenti);
+			parziale.remove(parziale.size()-1);
 		}
 	}
-	public Double getSalarioTeam(List<People>parziale) {
-		Double salarioTOT = 0.0;
-		for(People x : parziale) {
-			salarioTOT += x.getSalario();
+	
+	
+	/**
+	 * Metodo che calcola il salario nell'anno di una lista di giocatori
+	 * Usato nella ricorsione, per calcolare il salario del Dream Team
+	 * @param team
+	 * @return
+	 */
+	private double getSalarioTeam(List<People> team) {
+		double result = 0.0;
+		for (People p : team) {
+			result += this.salariesIDMap.get(p);
 		}
-		return salarioTOT;
+		return result;
+	}
+	
+	
+	/**
+	 * Metodo per calcolare il vertice di grado minimo tra un insieme di vertici
+	 * @param squadra
+	 * @return
+	 */
+	private People minDegreeVertex(List<People> squadra) {
+		People res = null;
+		int gradoMin = -1;
+		for (People p : squadra) {
+			int grado = Graphs.neighborListOf(this.grafo, p).size();
+			if (gradoMin==-1 || grado<gradoMin) {
+				res = p;
+			}
+		}		
+		return res;
+	}
+
+	public Graph<People, DefaultEdge> getGrafo() {
+		return grafo;
+	}
+
+	public void setGrafo(Graph<People, DefaultEdge> grafo) {
+		this.grafo = grafo;
+	}
+
+	public List<People> getAllPeople() {
+		return allPeople;
+	}
+
+	public void setAllPeople(List<People> allPeople) {
+		this.allPeople = allPeople;
+	}
+
+	public List<People> getDreamTeam() {
+		return dreamTeam;
+	}
+
+	public void setDreamTeam(List<People> dreamTeam) {
+		this.dreamTeam = dreamTeam;
 	}
 	
 	
