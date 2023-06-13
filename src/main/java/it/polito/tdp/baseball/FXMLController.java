@@ -91,12 +91,15 @@ public class FXMLController {
     	String s = "";
     	try {
     		inputAnnoNUM = Integer.parseInt(input);
-    		
+    		//persiste un errore: lezione del 29-05-2023 per la soluzione
     		model.calcolaDreamTeam();
     		List<People> dreamTeam = model.getDreamTeam();
     		for(People p : dreamTeam) {
     			s += p.getNameFirst()+" "+p.getNameLast()+"\n";
     		}
+    		this.txtResult.setText("Dream team :\n");
+    		this.txtResult.appendText("Salario dream team : "+model.getSalarioMaggiore());
+    		this.txtResult.appendText("\n"+s);
     		
     	}catch(NumberFormatException e) {
     		this.txtResult.setText("Inserire un valore numerico nel campo Year");

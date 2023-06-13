@@ -21,6 +21,7 @@ public class Model {
 	private BaseballDAO dao;
 	private Map<String, People>idMap;
 	
+	private Map<Integer, Team> teamsIDMap;
 	private Map<People, Double> salariesIDMap;
 	private Map<People, List<Team>> playerTeamsMap;
 	private List<People>dreamTeam;
@@ -29,7 +30,15 @@ public class Model {
 	public Model() {
 		this.allPeople = new ArrayList<>();
 		this.dao = new BaseballDAO();
-		this.idMap = new HashMap<>();		
+		this.idMap = new HashMap<>();	
+		
+		this.salariesIDMap = new HashMap<People, Double>();
+		this.playerTeamsMap = new HashMap<People, List<Team>>();
+		this.teamsIDMap = new HashMap<Integer, Team>();
+		List<Team> squadre = this.dao.readAllTeams();
+		for (Team t : squadre) {
+			this.teamsIDMap.put(t.getID(), t);
+		}
 	}
 	
 	public String creaGrafo(int anno, int salaryMINMLN) {
@@ -47,6 +56,25 @@ public class Model {
 		List<CoppiaA>allCoppie = new ArrayList<>(dao.getAllCoppie(idMap, anno));
 		for(CoppiaA x: allCoppie) {
 			grafo.addEdge(x.getP1(), x.getP2());
+		}
+		
+		/*
+		 * Creato il grafo, posso registrarmi in una mappa il salario dei giocatori che ne fanno parte
+		 * perché mi servirà per fare il punto 2 della simulazione
+		 * Registro di questi giocatori il loro salario in quell'anno. In una seconda mappa
+		 * mi registro in quali squadre ha giocato ogni giocatore. Questo non è necessario,
+		 * lo faccio solo per visualizzare la squadra di appartenenza dei giocatori del dream team,
+		 * per debugging.
+		 */
+		salariesIDMap = new HashMap<People, Double>();
+		for (People p : grafo.vertexSet()) {
+			salariesIDMap.put(p, this.dao.getPlayerSalaryInYear(anno, p));
+		}
+		
+		playerTeamsMap = new HashMap<People, List<Team>>();
+		for (People p : grafo.vertexSet()) {
+			List<Team> squadre = this.dao.getPlayerTeamsInYear(anno, p, teamsIDMap);
+			playerTeamsMap.put(p, squadre);
 		}
 		
 		return ("Grafo creato con "+grafo.vertexSet().size()+" vertici e "+grafo.edgeSet().size()+" archi");
@@ -151,14 +179,14 @@ public class Model {
 		 * Riesce a terminare in tempi acettabili solo su grafi molto piccoli, con meno di 10 vertici. La versione 
 		 * ottimizzata di sotto riesce a gestire velocemente anche grafi con 40-50 vertici.
 		 */
-//		for (People p : rimanenti) {
-//			List<People> currentRimanenti = new ArrayList<>(rimanenti);
-//				parziale.add(p);
-//				currentRimanenti.removeAll(Graphs.neighborListOf(this.grafo, p));
-//				currentRimanenti.remove(p);
-//				ricorsione(parziale, currentRimanenti);
-//				parziale.remove(parziale.size()-1);
-//		}
+       	for (People p : rimanenti) {
+ 			List<People> currentRimanenti = new ArrayList<>(rimanenti);
+ 				parziale.add(p);
+ 				currentRimanenti.removeAll(Graphs.neighborListOf(this.grafo, p));
+ 				currentRimanenti.remove(p);
+ 				ricorsione(parziale, currentRimanenti);
+ 				parziale.remove(parziale.size()-1);
+ 		}
 		
 		
 		/*
@@ -175,11 +203,11 @@ public class Model {
 		 * L'alternativa sarebbe di fare, nel metodo calcolaDreamTeam(), un sort dei vertici in 'rimanente' in ordine crescente del loro grado
 		 * e poi selezionare sempre il primo.
 		 */
-		List<People> squadra =  Graphs.neighborListOf(this.grafo, rimanenti.get(0));
-		squadra.add( rimanenti.get(0));
+		/*List<People> squadra =  Graphs.neighborListOf(this.grafo, rimanenti.get(0));
+		squadra.add(rimanenti.get(0));
 		People startP = minDegreeVertex(squadra);
 		List<People> squadraMin =  Graphs.neighborListOf(this.grafo, rimanenti.get(0));
-		squadraMin.add( rimanenti.get(0));
+		squadraMin.add(rimanenti.get(0));
 		
 		for (People p : squadraMin) {
 			List<People> currentRimanenti = new ArrayList<>(rimanenti);
@@ -187,7 +215,7 @@ public class Model {
 			currentRimanenti.removeAll(squadraMin);
 			ricorsione(parziale, currentRimanenti);
 			parziale.remove(parziale.size()-1);
-		}
+		}*/
 	}
 	
 	
@@ -245,6 +273,14 @@ public class Model {
 
 	public void setDreamTeam(List<People> dreamTeam) {
 		this.dreamTeam = dreamTeam;
+	}
+
+	public Double getSalarioMaggiore() {
+		return salarioMaggiore;
+	}
+
+	public void setSalarioMaggiore(Double salarioMaggiore) {
+		this.salarioMaggiore = salarioMaggiore;
 	}
 	
 	

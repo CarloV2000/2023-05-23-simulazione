@@ -187,6 +187,74 @@ public class BaseballDAO {
 		}
 	}
 	
+	/**
+	 * Metodo per leggere il salario totale di un giocatore in un anno
+	 * @param year
+	 * @param player
+	 * @return
+	 */
+	public double getPlayerSalaryInYear(int year, People player) {
+		String sql = "SELECT s.playerID, SUM(s.salary) as totSalary "
+				+ "FROM  salaries s "
+				+ "WHERE s.playerID = ? AND year = ? "
+				+ "GROUP BY s.playerID";
+		double salario = 0.0;
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, player.getPlayerID());
+			st.setInt(2, year);
+			ResultSet rs = st.executeQuery();
+
+			if (rs.first()) {
+				salario = rs.getDouble("totSalary")/1000000;
+			}
+
+			conn.close();
+			return salario;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+	
+	
+	/**
+	 * Metodo che restituisce la lista di squadre per le quali un giocatore ha giocato in un dato anno
+	 * @param year
+	 * @param player
+	 * @param teamsIDMap
+	 * @return
+	 */
+	public List<Team> getPlayerTeamsInYear(int year, People player, Map<Integer, Team> teamsIDMap) {
+		String sql = "SELECT a.playerID, a.teamID "
+				+ "FROM appearances a "
+				+ "WHERE a.year=? AND a.playerID = ?";
+		List<Team> result = new ArrayList<Team>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, year);
+			st.setObject(2, player.getPlayerID());
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Team squadra = teamsIDMap.get(rs.getInt("teamID"));
+				result.add(squadra);
+			}
+
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+	
 	//=================================================================
 	//==================== HELPER FUNCTIONS =========================
 	//=================================================================
