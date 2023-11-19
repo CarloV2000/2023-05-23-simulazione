@@ -24,7 +24,7 @@ public class Model {
 	private Map<Integer, Team> teamsIDMap;
 	private Map<People, Double> salariesIDMap;
 	private Map<People, List<Team>> playerTeamsMap;
-	private List<People>dreamTeam;
+	private List<People>migliore;
 	private Double salarioMaggiore;
 	
 	public Model() {
@@ -126,7 +126,7 @@ public class Model {
 	 */
 	public void  calcolaDreamTeam() {
 		this.salarioMaggiore = 0.0;
-		this.dreamTeam = new ArrayList<People>();
+		this.migliore = new ArrayList<People>();
 		List<People> rimanenti = new ArrayList<People>(this.grafo.vertexSet());
 		
 		/*
@@ -166,7 +166,7 @@ public class Model {
 			double salario = getSalarioTeam(parziale);
 			if (salario>this.salarioMaggiore) {
 				this.salarioMaggiore = salario;
-				this.dreamTeam = new ArrayList<People>(parziale);
+				this.migliore = new ArrayList<People>(parziale);
 			}
 			return;
 		}
@@ -268,11 +268,11 @@ public class Model {
 	}
 
 	public List<People> getDreamTeam() {
-		return dreamTeam;
+		return migliore;
 	}
 
-	public void setDreamTeam(List<People> dreamTeam) {
-		this.dreamTeam = dreamTeam;
+	public void setDreamTeam(List<People> migliore) {
+		this.migliore = migliore;
 	}
 
 	public Double getSalarioMaggiore() {
